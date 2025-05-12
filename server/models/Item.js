@@ -10,14 +10,19 @@ const itemSchema = new mongoose.Schema({
     },
     category: {
         type: String,
-        enum: [salad, goodies, fruit]
+        enum: ['salad', 'goodies', 'fruit']
     },
     size: {
         type: String
     },
+    enoughFor:{
+        type:Number,
+        min:0
+    },
     price: {
         type: Number,
-        require: true
+        require: true,
+        min: 0
     },
     ingredients: {
         type: [

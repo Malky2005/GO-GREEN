@@ -21,7 +21,8 @@ const login = async (req,res)=>{
         username:foundUser.username,
         email:foundUser.email,
         address:foundUser.address,
-        phone:foundUser.phone
+        phone:foundUser.phone,
+        role:foundUser.role
     }
     const accessToken = jwt.sign(userInfo,process.env.ACCESS_TOKEN_SECRET)
     res.json({accessToken})
@@ -29,7 +30,9 @@ const login = async (req,res)=>{
 
 const register = async(req,res)=>{
     const { firstname, lastname, username, password, email, phone, street, city, building } = req.body
-    const buildingNum = building? Number(building) : undefined
+    if (building && (typeof building !== 'number' || building <= 0)) {
+        return res.status(400).json({ message: 'building number must be a positive number' })
+    }
     const address = {street,city,building:buildingNum}
     if(!firstname || !lastname || !username || !password || !email){
         return res.status(400).json({message:'All fields are required'})
@@ -39,9 +42,10 @@ const register = async(req,res)=>{
         return res.status(409).json({message:'username exists'})
     }
     const hashedPwd = await bcrypt.hash(password, 10)
+    
     const user = await User.create({firstname, lastname, username, password:hashedPwd, email, address, phone})
     if(user){
-        return res.status(201).json({message:`new user created ${user.username}`})
+        return res.status(201).json({message:`new user created ${user.username} as ${user.role}`})
     } else{
         return res.status(400).json({message:'invalid user'})
     }
