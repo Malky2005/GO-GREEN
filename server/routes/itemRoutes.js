@@ -1,12 +1,12 @@
 const express = require('express')
 const router = express.Router()
 const itemControllers = require('../controllers/itemControllers')
-const {verifyJWTUser, verifyJWTAdmin} = require('../middleware/verifyJWT')
+const { verifyJWTAdmin} = require('../middleware/verifyJWT')
 
 router.get('/',itemControllers.getAllItems)
 router.get('/:id',itemControllers.getItemById)
 router.post('/',verifyJWTAdmin,itemControllers.addNewItem)
 router.put('/', verifyJWTAdmin,itemControllers.updateItem)
-router.delete('/', verifyJWTAdmin, itemControllers.deletItem)
+router.delete('/', verifyJWTAdmin, itemControllers.deleteItem)
 
 module.exports = router

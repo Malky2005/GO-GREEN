@@ -13,7 +13,8 @@ app.use(cors(corsOptions))
 app.use(express.json())
 
 app.use('/api/auth',require('./routes/authRoutes'))
-app.use('/api/items',require('./routes/ItemRoutes'))
+app.use('/api/items',require('./routes/itemRoutes'))
+app.use('/api/ingredients',require('./routes/ingridientRoutes'))
 
 mongoose.connection.once('open', ()=>{
     console.log('connected to DB');
