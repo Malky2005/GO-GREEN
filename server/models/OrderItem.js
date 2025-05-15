@@ -20,4 +20,6 @@ const OrderItemSchema = new mongoose.Schema({
     timestamps: true
 });
 
+OrderItemSchema.index({ order: 1, item: 1 }, { unique: true });
+
 module.exports = mongoose.model('OrderItem', OrderItemSchema);

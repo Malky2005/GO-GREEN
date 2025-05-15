@@ -32,19 +32,13 @@ const getOrderById = async (req, res) => {
 }
 
 const createOrder = async (req, res) => {
-    const { user } = req.body
-    if (!user) {
-        return res.status(400).json({ message: 'User is required' })
-    }
-    if (!mongoose.Types.ObjectId.isValid(user)) {
-        return res.status(400).json({ message: 'User id is not valid' })
-    }
+    const { username } = req.user
     try {
-        const userExists = await User.findById(user)
+        const userExists = await User.find({ username }).lean()
         if (!userExists) {
             return res.status(404).json({ message: 'User not found' })
         }
-        const newOrder = new Order(req.body)
+        const newOrder = await Order.create({user: userExists._id})
         await newOrder.save()
         res.status(201).json(newOrder)
     } catch (error) {
@@ -54,7 +48,10 @@ const createOrder = async (req, res) => {
 }
 
 // const updateOrder = async (req, res) => {
-//     const { id } = req.params
+//     const { id, street, city, building, deliveryPhoneNumber, dateForDelivery, status } = req.body
+//     if (!id || !street || !city || !building || !deliveryPhoneNumber || !dateForDelivery) {
+//         return res.status(400).json({ message: 'All fields are required' })
+//     }
 //     if (!mongoose.Types.ObjectId.isValid(id)) {
 //         return res.status(400).json({ message: 'Id is not valid' })
 //     }
@@ -63,10 +60,7 @@ const createOrder = async (req, res) => {
 //         if (!order) {
 //             return res.status(404).json({ message: 'Order not found' })
 //         }
-//         const { street, city, building, deliveryPhoneNumber, dateForDelivery, status } = req.body
-//         if (!street || !city || !building || !deliveryPhoneNumber || !dateForDelivery) {
-//             return res.status(400).json({ message: 'All fields are required' })
-//         }
+//
 //         if (!['InBascket', 'Ordered', 'Accepted', 'Delivered'].includes(status)) {
 //             return res.status(400).json({ message: 'Status is not valid' })
 //         }
@@ -113,12 +107,10 @@ const deleteOrder = async (req, res) => {
 }
 
 const getOrdersByUserId = async (req, res) => {
-    const { id } = req.params
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(400).json({ message: 'Id is not valid' })
-    }
+    const { username } = req.user
     try {
-        const orders = await Order.find({ user: id }).lean()
+        const user = await User.findOne({ username }).lean()
+        const orders = await Order.find({ user: user._id }).lean()
         if (!orders) {
             orders = []
         }
