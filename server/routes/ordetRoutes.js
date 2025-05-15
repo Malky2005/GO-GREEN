@@ -1,0 +1,16 @@
+const express = require('express')
+const router = express.Router()
+const orderControllers = require('../controllers/orderController')
+const { verifyJWTUser,verifyJWTAdmin } = require('../middleware/verifyJWT')
+
+router.get('/',verifyJWTAdmin,orderControllers.getAllOrders)
+router.get('/:id',verifyJWTAdmin,orderControllers.getOrderById)
+router.post('/',verifyJWTUser,orderControllers.createOrder)
+//router.put('/:id',verifyJWTAdmin,orderControllers.updateOrder)
+router.delete('/:id',verifyJWTAdmin,orderControllers.deleteOrder)
+router.get('/user/:id',verifyJWTUser,orderControllers.getOrdersByUserId)
+router.get('/:id/total',verifyJWTUser,orderControllers.getTotalPrice)
+router.put('/:id/status/order',verifyJWTAdmin,orderControllers.orderOrder)
+router.put('/:id/status/Accept',verifyJWTAdmin,orderControllers.acceptOrder)
+router.put('/:id/status/deliver',verifyJWTAdmin,orderControllers.deliverOrder)
+

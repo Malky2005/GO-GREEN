@@ -93,9 +93,6 @@ const updateIngredient = async (req, res) => {
 
 const deleteIngredient = async (req, res) => {
     const { id } = req.params
-    if (!id) {
-        return res.status(400).json({ message: 'Id is required' })
-    }
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({ message: 'Id is not valid' })
     }
@@ -106,8 +103,43 @@ const deleteIngredient = async (req, res) => {
         }
         const result = await ingredient.deleteOne()
         res.json({ message: `Ingredient ${result.name} with ID ${result._id} deleted` })
-    }catch (error) {
+    } catch (error) {
         console.error('Error deleting ingredient:', error)
+        return res.status(500).json({ message: 'Internal server error' })
+    }
+}
+
+const BuyIngredient = async (req, res) => {
+    const { id } = req.params
+    const { quantity } = req.body
+    if (!quantity) {
+        return res.status(400).json({ message: 'quantity is required' })
+    }
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ message: 'Id is not valid' })
+    }
+    try {
+        const ingredient = await Ingredient.findById(id)
+        if (!ingredient) {
+            return res.status(404).json({ message: 'Ingredient not found' })
+        }
+        if (quantity && (typeof quantity !== 'number' || quantity < 0)) {
+            return res.status(400).json({ message: 'Quantity must be a positive number' })
+        }
+        if (ingredient.quantityMissing) {
+            if (ingredient.quantityMissing > quantity) {
+                ingredient.quantityMissing -= quantity
+            }else{
+                ingredient.quantityInStack += quantity - ingredient.quantityMissing
+                ingredient.quantityMissing = null
+            }
+        }else {
+            ingredient.quantityInStack += quantity
+        }
+        const updatedIngredient = await ingredient.save()
+        res.json({ message: `Ingredient ${updatedIngredient.name} updated` })
+    } catch (error) {
+        console.error('Error updating ingredient:', error)
         return res.status(500).json({ message: 'Internal server error' })
     }
 }
@@ -117,5 +149,6 @@ module.exports = {
     GetIngridientById,
     createIngredient,
     updateIngredient,
-    deleteIngredient
+    deleteIngredient,
+    BuyIngredient
 }

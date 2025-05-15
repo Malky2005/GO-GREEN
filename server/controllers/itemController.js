@@ -158,9 +158,6 @@ const updateItem = async (req, res) => {
 
 const deleteItem = async (req, res) => {
     const { id } = req.params
-    if (!id) {
-        return res.status(400).send('id is requried')
-    }
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({ message: 'Id is not valid' })
     }

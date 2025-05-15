@@ -6,19 +6,25 @@ const OrderSchema = new mongoose.Schema({
         ref:User,
         required:true
     },
-    shippingAddress: {
-        street: { type: String, required: true },
-        city: { type: String, required: true },
-        building: { type: Number, required: true }
+    deliveryAddress:{
+        street: { type: String },
+        city: { type: String },
+        building: { type: Number }
+    },
+    deliveryPhoneNumber: {
+        type: String
     },
     totalPrice: {
-        type: Number,
-        required: true
+        type: Number
     },
     status:{
         type:String,
-        enum:['InBascket','Ordered','GettingReady','Delivered'],
-        default:'InBascket'
+        enum:['InBascket','Ordered','Accepted','Delivered'],
+        default:'InBascket',
+        required:true
+    },
+    dateForDelivery:{
+        type:Date
     }
 },{
     timestamps:true

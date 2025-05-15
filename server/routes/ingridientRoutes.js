@@ -9,4 +9,6 @@ router.post('/', verifyJWTAdmin, ingredientControllers.createIngredient)
 router.put('/', verifyJWTAdmin, ingredientControllers.updateIngredient)
 router.delete('/', verifyJWTAdmin, ingredientControllers.deleteIngredient)
 
+router.put('/:id/buy', verifyJWTAdmin, ingredientControllers.BuyIngredient)
+
 module.exports = router

@@ -17,6 +17,9 @@ const ingredientSchema = new mongoose.Schema({
         type: Number, 
         required: true,
         default: 0
+    },
+    quantityMissing: {
+        type: Number
     }
 }, {
     timestamps: true
