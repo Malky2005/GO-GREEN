@@ -9,3 +9,5 @@ router.get('/:id', verifyJWTAdmin, userControllers.getUserById)
 router.put('/', verifyJWTUser, userControllers.updateUser)
 router.put('/update', verifyJWTAdmin, userControllers.updateUserById)
 router.delete('/:id', verifyJWTAdmin, userControllers.deleteUser)
+
+module.exports = router

@@ -14,3 +14,4 @@ router.put('/:id/status/order',verifyJWTAdmin,orderControllers.orderOrder)
 router.put('/:id/status/Accept',verifyJWTAdmin,orderControllers.acceptOrder)
 router.put('/:id/status/deliver',verifyJWTAdmin,orderControllers.deliverOrder)
 
+module.exports = router

@@ -8,3 +8,5 @@ router.get('/:id', verifyJWTUserOfOrderItem, orderItemControllers.getOrderItemBy
 router.post('/', verifyJWTUser, orderItemControllers.addOrderItem)
 router.put('/', verifyJWTUserOfOrderItem, orderItemControllers.updateOrderItem)
 router.delete('/:id', verifyJWTUserOfOrderItem, orderItemControllers.deleteOrderItem)
+
+module.exports = router

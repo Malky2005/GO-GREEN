@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const itemControllers = require('../controllers/itemControllers')
+const itemControllers = require('../controllers/itemController')
 const { verifyJWTAdmin} = require('../middleware/verifyJWT')
 
 router.get('/',itemControllers.getAllItems)
