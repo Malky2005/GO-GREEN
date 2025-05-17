@@ -108,7 +108,7 @@ const updateItem = async (req, res) => {
         return res.status(400).json({ message: `Invalid category. Valid categories are: ${validCategories.join(', ')}` });
     }
     const duplicateItem = await Item.findOne({ name, size })
-    if (duplicateItem && duplicateItem._id != id) {
+    if (duplicateItem && duplicateItem._id.toString() != id) {
         return res.status(409).json({ message: "duplicate name and size" })
     }
     if (typeof price !== 'number' || price <= 0) {

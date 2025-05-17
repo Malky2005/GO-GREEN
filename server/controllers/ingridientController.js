@@ -70,7 +70,7 @@ const updateIngredient = async (req, res) => {
             return res.status(404).json({ message: 'Ingredient not found' })
         }
         const duplicate = await Ingredient.findOne({ name }).lean()
-        if (duplicate && duplicate._id !== id) {
+        if (duplicate && duplicate._id.toString() !== id) {            
             return res.status(409).json({ message: 'Ingredient name already exists' })
         }
         if (price && (typeof price !== 'number' || price < 0)) {
@@ -82,9 +82,9 @@ const updateIngredient = async (req, res) => {
         ingredient.name = name
         ingredient.unit = unit
         ingredient.price = price
-        ingredient.quantityInStack = quantityInStack
+        ingredient.quantityInStack = quantityInStack? quantityInStack : 0
         const updatedIngredient = await ingredient.save()
-        res.json({ message: `Ingredient ${updatedIngredient.name} updated` })
+        res.json(updatedIngredient)
     } catch (error) {
         console.error('Error updating ingredient:', error)
         return res.status(500).json({ message: 'Internal server error' })
@@ -102,7 +102,7 @@ const deleteIngredient = async (req, res) => {
             return res.status(404).json({ message: 'Ingredient not found' })
         }
         const result = await ingredient.deleteOne()
-        res.json({ message: `Ingredient ${result.name} with ID ${result._id} deleted` })
+        res.json(result)
     } catch (error) {
         console.error('Error deleting ingredient:', error)
         return res.status(500).json({ message: 'Internal server error' })
@@ -110,8 +110,7 @@ const deleteIngredient = async (req, res) => {
 }
 
 const BuyIngredient = async (req, res) => {
-    const { id } = req.params
-    const { quantity } = req.body
+    const { id, quantity } = req.body
     if (!quantity) {
         return res.status(400).json({ message: 'quantity is required' })
     }
