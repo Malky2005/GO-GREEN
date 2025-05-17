@@ -69,9 +69,44 @@ const verifyJWTUserOfOrderItem = (req, res, next) => {
     })
 }
 
+const verifyJWTUserOfOrder = (req, res, next) => {
+    const authHeader = req.headers.authorization || req.headers.Authorization
+    if (!authHeader?.startsWith('Bearer ')) {
+        console.log(authHeader);
+        return res.status(401).json({ message: 'Unauthorized' })
+    }
+    const token = authHeader.split(' ')[1]
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decoded) => {
+        if (err) return res.status(403).json({ message: 'Forbidden' })
+        if (decoded.role === 'Admin') {
+            next();
+        }
+        try {
+            const{ id } = req.params;
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return res.status(400).json({ message: 'Invalid order ID' });
+            }
+            const order = await Order.findById(id);
+            if (!order) {
+                return res.status(404).json({ message: 'Order not found' });
+            }
+            const user = await User.findOne({username: decoded.username });
+            if (order.user !== user._id) {
+                return res.status(403).json({ message: 'Forbidden: You do not own this order' });
+            }
+
+            req.user = decoded;
+            next();
+        } catch (error) {
+            console.error('Error verifying user of order:', error);
+            return res.status(500).json({ message: 'Internal server error' });
+        }
+    })
+}
+
 module.exports = {
     verifyJWTUser,
     verifyJWTAdmin,
-    verifyJWTThisUser,
-    verifyJWTUserOfOrderItem
+    verifyJWTUserOfOrderItem,
+    verifyJWTUserOfOrder
 }

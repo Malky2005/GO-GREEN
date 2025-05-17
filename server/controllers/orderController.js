@@ -24,6 +24,11 @@ const getOrderById = async (req, res) => {
         if (!order) {
             return res.status(404).json({ message: 'Order not found' })
         }
+        const orderItems = await OrderItem.find({ order: id }).populate('item')
+        if (!orderItems) {
+            return res.status(400).json({ message: 'Order items not found' })
+        }
+        order.orderItems = orderItems
         res.json(order)
     } catch (error) {
         console.error('Error fetching order:', error)
@@ -110,7 +115,7 @@ const getOrdersByUserId = async (req, res) => {
     const { username } = req.user
     try {
         const user = await User.findOne({ username }).lean()
-        const orders = await Order.find({ user: user._id }).lean()
+        const orders = await Order.find({ user: user._id, status: { $ne: 'InBascket' } }).lean();
         if (!orders) {
             orders = []
         }
