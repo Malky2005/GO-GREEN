@@ -15,6 +15,9 @@ app.use(express.json())
 app.use('/api/auth',require('./routes/authRoutes'))
 app.use('/api/items',require('./routes/itemRoutes'))
 app.use('/api/ingredients',require('./routes/ingridientRoutes'))
+app.use('/api/orders',require('./routes/orderRoutes'))
+app.use('/api/orderItems',require('./routes/orderItemRoutes'))
+app.use('/api/users',require('./routes/userRoutes'))
 
 mongoose.connection.once('open', ()=>{
     console.log('connected to DB');
