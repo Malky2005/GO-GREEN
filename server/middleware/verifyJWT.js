@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken')
 const mongoose = require('mongoose')
 const OrderItem = require('../models/OrderItem')
+const Order = require('../models/Order')
+const User = require('../models/User')
 
 const verifyJWTUser = (req, res, next) => {
     const authHeader = req.headers.authorization || req.headers.Authorization
@@ -34,20 +36,20 @@ const verifyJWTAdmin = (req, res, next) => {
     })
 }
 
-const verifyJWTUserOfOrderItem = (req, res, next) => {
+const verifyJWTUserOfOrderItem = async(req, res, next) => {
     const authHeader = req.headers.authorization || req.headers.Authorization
     if (!authHeader?.startsWith('Bearer ')) {
         console.log(authHeader);
         return res.status(401).json({ message: 'Unauthorized' })
     }
     const token = authHeader.split(' ')[1]
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decoded) => {
+    await jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decoded) => {
         if (err) return res.status(403).json({ message: 'Forbidden' })
         if (decoded.role === 'Admin') {
             next();
         }
         try {
-            const{ id } = req.params;
+            const{ id } = req.body;
             if (!mongoose.Types.ObjectId.isValid(id)) {
                 return res.status(400).json({ message: 'Invalid order item ID' });
             }
@@ -56,7 +58,7 @@ const verifyJWTUserOfOrderItem = (req, res, next) => {
                 return res.status(404).json({ message: 'OrderItem not found' });
             }
             const user = await User.findOne({username: decoded.username });
-            if (orderItem.order.user.toString() !== user._id) {
+            if (orderItem.order.user.toString() !== user._id.toString()) {
                 return res.status(403).json({ message: 'Forbidden: You do not own this order' });
             }
 
@@ -69,14 +71,14 @@ const verifyJWTUserOfOrderItem = (req, res, next) => {
     })
 }
 
-const verifyJWTUserOfOrder = (req, res, next) => {
+const verifyJWTUserOfOrder = async(req, res, next) => {
     const authHeader = req.headers.authorization || req.headers.Authorization
     if (!authHeader?.startsWith('Bearer ')) {
         console.log(authHeader);
         return res.status(401).json({ message: 'Unauthorized' })
     }
     const token = authHeader.split(' ')[1]
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decoded) => {
+    await jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, decoded) => {
         if (err) return res.status(403).json({ message: 'Forbidden' })
         if (decoded.role === 'Admin') {
             next();
@@ -91,7 +93,8 @@ const verifyJWTUserOfOrder = (req, res, next) => {
                 return res.status(404).json({ message: 'Order not found' });
             }
             const user = await User.findOne({username: decoded.username });
-            if (order.user !== user._id) {
+            if (order.user.toString() !== user._id.toString()) {
+                
                 return res.status(403).json({ message: 'Forbidden: You do not own this order' });
             }
 

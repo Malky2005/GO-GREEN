@@ -39,11 +39,12 @@ const getOrderById = async (req, res) => {
 const createOrder = async (req, res) => {
     const { username } = req.user
     try {
-        const userExists = await User.find({ username }).lean()
-        if (!userExists) {
-            return res.status(404).json({ message: 'User not found' })
+        const user = await User.findOne({ username }).lean()
+        const orderExist = await Order.findOne({ user: user._id,status:"InBascket" }).lean()
+        if(orderExist){
+            return res.status(400).json({ message: 'Order already exists in basket' })
         }
-        const newOrder = await Order.create({user: userExists._id})
+        const newOrder = await Order.create({user: user._id})
         await newOrder.save()
         res.status(201).json(newOrder)
     } catch (error) {
@@ -76,13 +77,13 @@ const createOrder = async (req, res) => {
 //         order.deliveryPhoneNumber = deliveryPhoneNumber
 //         order.dateForDelivery = dateForDelivery
 //         order.status = status
-//         const orderItems = await OrderItem.find({ order: id })
-//         if (!orderItems || orderItems.length === 0) {
+//         const orderItems = await OrderItem.find({ order: id }).populate('item')
+//         if (!orderItems ) {
 //             return res.status(400).json({ message: 'Order items not found' })
 //         }
-//         const totalPrice = 0
+//         let totalPrice = 0
 //         orderItems.forEach(item => {
-//             totalPrice += item.price * item.quantity
+//             totalPrice += item.item.price * item.quantity
 //         })
 //         order.totalPrice = totalPrice
 //         const updatedOrder = await Order.save()
@@ -103,7 +104,7 @@ const deleteOrder = async (req, res) => {
         if (!order) {
             return res.status(404).json({ message: 'Order not found' })
         }
-        const result = await item.deletOne()
+        const result = await order.deleteOne()
         res.json(result)
     } catch (error) {
         console.error('Error deleting order:', error)
@@ -115,7 +116,7 @@ const getOrdersByUserId = async (req, res) => {
     const { username } = req.user
     try {
         const user = await User.findOne({ username }).lean()
-        const orders = await Order.find({ user: user._id, status: { $ne: 'InBascket' } }).lean();
+        const orders = await Order.find({ user: user._id }).lean();
         if (!orders) {
             orders = []
         }
@@ -136,14 +137,14 @@ const getTotalPrice = async (req, res) => {
         if (!order) {
             return res.status(404).json({ message: 'Order not found' })
         }
-        const orderItems = await OrderItem.find({ order: id })
-        if (!orderItems || orderItems.length === 0) {
+        const orderItems = await OrderItem.find({ order: id }).populate('item')
+        if (!orderItems ) {
             return res.status(400).json({ message: 'Order items not found' })
         }
         let totalPrice = 0
         orderItems.forEach(item => {
-            totalPrice += item.price * item.quantity
-        })
+            totalPrice += item.item.price * item.quantity
+        })        
         res.json({ totalPrice })
     } catch (error) {
         console.error('Error fetching total price:', error)
@@ -175,13 +176,13 @@ const orderOrder = async (req, res) => {
         order.deliveryAddress = { street, city, building }
         order.deliveryPhoneNumber = deliveryPhoneNumber
         order.dateForDelivery = dateForDelivery
-        const orderItems = await OrderItem.find({ order: id })
-        if (!orderItems || orderItems.length === 0) {
+        const orderItems = await OrderItem.find({ order: id }).populate('item')
+        if (!orderItems) {
             return res.status(400).json({ message: 'Order items not found' })
         }
-        const totalPrice = 0
+        let totalPrice = 0
         orderItems.forEach(item => {
-            totalPrice += item.price * item.quantity
+            totalPrice += item.item.price * item.quantity
         })
         order.totalPrice = totalPrice
         order.status = 'Ordered'

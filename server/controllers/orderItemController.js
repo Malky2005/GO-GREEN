@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const OrderItem = require('../models/OrderItem');
 const Order = require('../models/Order');
 const Item = require('../models/Item');
+const User = require('../models/User');
 
 const getAllOrderItems = async (req, res) => {
     try {
@@ -9,6 +10,28 @@ const getAllOrderItems = async (req, res) => {
         res.json(orderItems);
     } catch (error) {
         console.error('Error fetching order items:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+}
+
+const getOrderItemsByUser = async (req, res) => {
+    const { username } = req.user;
+    try {
+        const user = await User.findOne({ username });
+
+        const orders = await Order.find({ user: user._id });
+
+        const orderIds = orders.map(order => order._id); // רשימת ה-IDs של ההזמנות
+        const orderItems = await OrderItem.find({ order: { $in: orderIds } })
+            .populate('order')
+            .populate('item').lean().sort({ createdAt: -1 });
+
+        if (!orderItems) {
+            return res.status(404).json({ message: 'No order items found for this user' });
+        }
+        res.json(orderItems);
+    } catch (error) {
+        console.error('Error fetching order items by user:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 }
@@ -31,49 +54,51 @@ const getOrderItemById = async (req, res) => {
 }
 
 const addOrderItem = async (req, res) => {
-    const { order, item, quantity } = req.body;
-    if (!order || !item || !quantity) {
-        return res.status(400).json({ message: 'Order, item, and quantity are required' });
-    }
-    if (!mongoose.Types.ObjectId.isValid(order)) {
-        return res.status(400).json({ message: 'Invalid order ID' });
+    const { item, quantity } = req.body;
+    if (!item || !quantity) {
+        return res.status(400).json({ message: 'item, and quantity are required' });
     }
     if (!mongoose.Types.ObjectId.isValid(item)) {
         return res.status(400).json({ message: 'Invalid item ID' });
     }
-    if( typeof quantity !== 'number' || quantity <= 0) {
+    if (typeof quantity !== 'number' || quantity <= 0) {
         return res.status(400).json({ message: 'Quantity must be a positive number' });
     }
     try {
-        const duplicate = await OrderItem.findOne({order, item});
+        const user = await User.findOne({ username: req.user.username });
+
+        let order = await Order.findOne({ status: 'InBascket', user: user._id });
+        if (!order) {
+            order = await Order.create({ user: user._id });
+        }
+        const duplicate = await OrderItem.findOne({ order: order._id, item });
+
+
         if (duplicate) {
             return res.status(409).json({ message: 'Order item already exists' });
-        }
-        const orderExists = await Order.findById(order);
-        if (!orderExists) {
-            return res.status(404).json({ message: 'Order not found' });
         }
         const itemExists = await Item.findById(item);
         if (!itemExists) {
             return res.status(404).json({ message: 'Item not found' });
         }
-        
-        const orderItem = OrderItem.create({ order, item, quantity });
+
+        const orderItem = await OrderItem.create({ order: order._id, item, quantity });
         if (orderItem) {
-            return res.status(201).json({ message: `New order item created with ID ${orderItem._id}` });
-        }else {
+            return res.status(201).json({ message: 'Order item created successfully', orderItem });
+        } else {
             return res.status(400).json({ message: 'Invalid order item' });
         }
-    }catch (error) {
+    } catch (error) {
         console.error('Error adding order item:', error);
         return res.status(500).json({ message: 'Internal server error' });
     }
 }
 
 const updateOrderItem = async (req, res) => {
-    const { id, order, item, quantity } = req.body;
-    if (!id || !order || !item || !quantity) {
-        return res.status(400).json({ message: 'Order, item, and quantity are required' });
+    const { id, quantity } = req.body;
+
+    if (!id || !quantity) {
+        return res.status(400).json({ message: 'all fields are required' });
     }
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({ message: 'Invalid order item ID' });
@@ -83,34 +108,17 @@ const updateOrderItem = async (req, res) => {
         if (!orderItem) {
             return res.status(404).json({ message: 'Order item not found' });
         }
-    } catch (error) {
-        console.error('Error fetching order item:', error);
-        return res.status(500).json({ message: 'Internal server error' });
-    }
-    
-    if (!mongoose.Types.ObjectId.isValid(order)) {
-        return res.status(400).json({ message: 'Invalid order ID' });
-    }
-    if (!mongoose.Types.ObjectId.isValid(item)) {
-        return res.status(400).json({ message: 'Invalid item ID' });
-    }
-    if( typeof quantity !== 'number' || quantity <= 0) {
-        return res.status(400).json({ message: 'Quantity must be a positive number' });
-    }
-    try {
-        const orderExists = await Order.findById(order);
-        if (!orderExists) {
-            return res.status(404).json({ message: 'Order not found' });
-        }
-        const itemExists = await Item.findById(item);
-        if (!itemExists) {
-            return res.status(404).json({ message: 'Item not found' });
-        }
+        const fullOrder = await Order.findById(orderItem.order);
+        console.log(fullOrder);
         
-        orderItem.order = order;
-        orderItem.item = item;
+        if (fullOrder.status !== 'InBascket') {
+            return res.status(400).json({ message: 'Cannot update item that was orderd' });
+        }
+        if (typeof quantity !== 'number' || quantity <= 0) {
+            return res.status(400).json({ message: 'Quantity must be a positive number' });
+        }
         orderItem.quantity = quantity;
-        
+
         const updatedOrderItem = await orderItem.save();
         res.json(updatedOrderItem);
     } catch (error) {
@@ -121,15 +129,19 @@ const updateOrderItem = async (req, res) => {
 
 const deleteOrderItem = async (req, res) => {
     const { id } = req.params;
-    // if (!mongoose.Types.ObjectId.isValid(id)) {
-    //     return res.status(400).json({ message: 'Invalid order item ID' });
-    // }
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ message: 'Invalid order item ID' });
+    }
     try {
         const orderItem = await OrderItem.findById(id);
-        // if (!orderItem) {
-        //     return res.status(404).json({ message: 'Order item not found' });
-        // }
-        const result = await orderItem.deletOne()
+        if (!orderItem) {
+            return res.status(404).json({ message: 'Order item not found' });
+        }
+        const order = await Order.findById(orderItem.order);
+        if (order.status !== 'InBascket') {
+            return res.status(400).json({ message: 'Cannot delete item that was ordered' });
+        }
+        const result = await orderItem.deleteOne();
         res.json(result)
     } catch (error) {
         console.error('Error deleting order item:', error);
@@ -139,6 +151,7 @@ const deleteOrderItem = async (req, res) => {
 
 module.exports = {
     getAllOrderItems,
+    getOrderItemsByUser,
     getOrderItemById,
     addOrderItem,
     updateOrderItem,

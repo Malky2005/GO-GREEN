@@ -50,7 +50,7 @@ const addNewItem = async (req, res) => {
     if (typeof price !== 'number' || price <= 0) {
         return res.status(400).json({ message: 'Price must be a positive number' })
     }
-    var ing = [];
+    let ing = [];
     if (ingredients && Array.isArray(ingredients) && ingredients.length > 0) {
         ing = ingredients
     }
@@ -114,7 +114,7 @@ const updateItem = async (req, res) => {
     if (typeof price !== 'number' || price <= 0) {
         return res.status(400).json({ message: 'Price must be a positive number' })
     }
-    var ing = [];
+    let ing = [];
     if (ingredients && Array.isArray(ingredients) && ingredients.length > 0) {
         ing = ingredients
     }
