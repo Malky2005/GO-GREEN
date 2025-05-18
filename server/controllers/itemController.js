@@ -40,7 +40,7 @@ const addNewItem = async (req, res) => {
         return res.status(400).json({ message: 'enoughFor must be a positive number' })
     }
     const validCategories = ['salad', 'goodies', 'fruit'];
-    if (!validCategories.includes(category)) {
+    if (category && !validCategories.includes(category)) {
         return res.status(400).json({ message: `Invalid category. Valid categories are: ${validCategories.join(', ')}` });
     }
     const duplicateItem = await Item.findOne({ name, size })
@@ -50,7 +50,7 @@ const addNewItem = async (req, res) => {
     if (typeof price !== 'number' || price <= 0) {
         return res.status(400).json({ message: 'Price must be a positive number' })
     }
-    const ing = [];
+    var ing = [];
     if (ingredients && Array.isArray(ingredients) && ingredients.length > 0) {
         ing = ingredients
     }
@@ -59,7 +59,7 @@ const addNewItem = async (req, res) => {
         if (!ingredient || !ingredient.ingredient || !ingredient.quantity) {
             return res.status(400).json({ message: 'Ingredient and quantity are required' })
         }
-        if (!mongoose.Types.ObjectId.isValid(id)) {
+        if (!mongoose.Types.ObjectId.isValid(ingredient.ingredient)) {
             return res.status(400).json({ message: `Id:  ${ingredient.ingredient} is not valid` })
         }
         try {
@@ -76,7 +76,7 @@ const addNewItem = async (req, res) => {
         }
     }
     try {
-        const item = await Item.create({ name, details, category, size, price, ingredients })
+        const item = await Item.create({ name, details, category, size, price, ing, enoughFor })
         if (item) {
             return res.status(201).json({ message: `new item ${item.name} created` })
         } else {
@@ -114,7 +114,7 @@ const updateItem = async (req, res) => {
     if (typeof price !== 'number' || price <= 0) {
         return res.status(400).json({ message: 'Price must be a positive number' })
     }
-    const ing = [];
+    var ing = [];
     if (ingredients && Array.isArray(ingredients) && ingredients.length > 0) {
         ing = ingredients
     }
@@ -145,7 +145,7 @@ const updateItem = async (req, res) => {
     item.category = category
     item.size = size
     item.price = price
-    item.ingredients = ingredients
+    item.ingredients = ing
     item.enoughFor = enoughFor
     try {
     const updatedItem = await item.save()
@@ -162,11 +162,11 @@ const deleteItem = async (req, res) => {
         return res.status(400).json({ message: 'Id is not valid' })
     }
     try {
-        const item = await Item.findById(id).lean()
+        const item = await Item.findById(id)
         if (!item) {
-            return res.status(400).json({ message: 'Item not found' })
+            return res.status(404).json({ message: 'Item not found' })
         }
-        const result = await item.deletOne()
+        const result = await item.deleteOne()
         res.json(result)
     } catch (error) {
         console.error('Error fetching item:', error)

@@ -7,6 +7,6 @@ router.get('/',itemControllers.getAllItems)
 router.get('/:id',itemControllers.getItemById)
 router.post('/',verifyJWTAdmin,itemControllers.addNewItem)
 router.put('/', verifyJWTAdmin,itemControllers.updateItem)
-router.delete('/', verifyJWTAdmin, itemControllers.deleteItem)
+router.delete('/:id', verifyJWTAdmin, itemControllers.deleteItem)
 
 module.exports = router

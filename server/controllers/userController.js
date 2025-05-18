@@ -105,6 +105,9 @@ const updateUserById = async (req, res) => {
         if (building && (typeof building !== 'number' || building <= 0)) {
             return res.status(400).json({ message: 'building number must be a positive number' })
         }
+        if (role && !['Admin', 'User'].includes(role)) {
+            return res.status(400).json({ message: 'Invalid role' })
+        }
         const address = { street, city, building }
 
         const hashedPwd = await bcrypt.hash(password, 10)
